@@ -1,20 +1,5 @@
 'use strict';
 
-const { isAdmin } = require('../config');
-
-// ---- Asosiy menyu (inline) ----
-function mainMenu(userId) {
-  const rows = [
-    [{ text: '🔍 Foydalanuvchini qidirish', callback_data: 'search:menu' }],
-    [{ text: '🆔 Kanal / Group / User ID olish', callback_data: 'getid:menu' }],
-    [{ text: '👤 Mening ID\'im', callback_data: 'my:id' }],
-  ];
-  if (isAdmin(userId)) {
-    rows.push([{ text: '🛠 Admin panel', callback_data: 'admin:menu' }]);
-  }
-  return { reply_markup: { inline_keyboard: rows } };
-}
-
 // ---- Obuna tekshiruv klaviaturasi ----
 function subscriptionKeyboard(missingChannels) {
   const rows = missingChannels.map((c) => {
@@ -27,37 +12,49 @@ function subscriptionKeyboard(missingChannels) {
   return { reply_markup: { inline_keyboard: rows } };
 }
 
-// ---- Qidiruv usuli menyusi ----
+// ---- /search — qidiruv usuli menyusi (inline) ----
 function searchMenu() {
   return {
     reply_markup: {
       inline_keyboard: [
         [{ text: '🔢 User ID orqali', callback_data: 'search:by_id' }],
         [{ text: '📛 Username orqali', callback_data: 'search:by_username' }],
-        [{ text: '📞 Telefon orqali', callback_data: 'search:by_phone' }],
-        [{ text: '⬅️ Orqaga', callback_data: 'menu:main' }],
+        [{ text: '📞 Telefon (kontakt) orqali', callback_data: 'search:by_phone' }],
       ],
     },
   };
 }
 
-// ---- ID olish menyusi (inline) ----
-function getIdMenu() {
+// ---- /getid — barcha 3 ta request tugmasi bitta reply keyboard ----
+function getIdKeyboard() {
   return {
     reply_markup: {
-      inline_keyboard: [
-        [{ text: '📢 Kanal tanlash', callback_data: 'getid:channel' }],
-        [{ text: '👥 Group tanlash', callback_data: 'getid:group' }],
-        [{ text: '👤 Foydalanuvchi tanlash', callback_data: 'getid:user' }],
-        [{ text: '⬅️ Orqaga', callback_data: 'menu:main' }],
+      keyboard: [
+        [
+          {
+            text: '📢 Kanal',
+            request_chat: { request_id: 1, chat_is_channel: true },
+          },
+          {
+            text: '👥 Guruh',
+            request_chat: { request_id: 2, chat_is_channel: false },
+          },
+        ],
+        [
+          {
+            text: '👤 Foydalanuvchi',
+            request_users: { request_id: 3, user_is_bot: false, max_quantity: 1 },
+          },
+        ],
+        [{ text: '❌ Bekor qilish' }],
       ],
+      resize_keyboard: true,
+      one_time_keyboard: true,
     },
   };
 }
 
-// ---- Reply keyboardlar (request_contact / request_chat / request_users) ----
-
-// Kontakt ulashish (telefon orqali qidiruv uchun).
+// ---- Kontakt ulashish (telefon orqali qidiruv uchun) ----
 function contactKeyboard() {
   return {
     reply_markup: {
@@ -71,74 +68,7 @@ function contactKeyboard() {
   };
 }
 
-// request_chat — kanal tanlash (chat_is_channel: true).
-function requestChannelKeyboard() {
-  return {
-    reply_markup: {
-      keyboard: [
-        [
-          {
-            text: '📢 Kanalni tanlash',
-            request_chat: {
-              request_id: 1,
-              chat_is_channel: true,
-            },
-          },
-        ],
-        [{ text: '❌ Bekor qilish' }],
-      ],
-      resize_keyboard: true,
-      one_time_keyboard: true,
-    },
-  };
-}
-
-// request_chat — group tanlash (chat_is_channel: false).
-function requestGroupKeyboard() {
-  return {
-    reply_markup: {
-      keyboard: [
-        [
-          {
-            text: '👥 Guruhni tanlash',
-            request_chat: {
-              request_id: 2,
-              chat_is_channel: false,
-            },
-          },
-        ],
-        [{ text: '❌ Bekor qilish' }],
-      ],
-      resize_keyboard: true,
-      one_time_keyboard: true,
-    },
-  };
-}
-
-// request_users — foydalanuvchi tanlash.
-function requestUsersKeyboard() {
-  return {
-    reply_markup: {
-      keyboard: [
-        [
-          {
-            text: '👤 Foydalanuvchini tanlash',
-            request_users: {
-              request_id: 3,
-              user_is_bot: false,
-              max_quantity: 1,
-            },
-          },
-        ],
-        [{ text: '❌ Bekor qilish' }],
-      ],
-      resize_keyboard: true,
-      one_time_keyboard: true,
-    },
-  };
-}
-
-// Reply keyboardni olib tashlash.
+// ---- Reply keyboardni olib tashlash ----
 function removeKeyboard() {
   return { reply_markup: { remove_keyboard: true } };
 }
@@ -152,7 +82,6 @@ function adminMenu() {
         [{ text: '📢 Majburiy kanallar', callback_data: 'admin:channels' }],
         [{ text: '📣 Broadcast', callback_data: 'admin:broadcast' }],
         [{ text: '👥 Foydalanuvchilar', callback_data: 'admin:users' }],
-        [{ text: '⬅️ Orqaga', callback_data: 'menu:main' }],
       ],
     },
   };
@@ -172,14 +101,10 @@ function adminChannelsMenu(channels) {
 }
 
 module.exports = {
-  mainMenu,
   subscriptionKeyboard,
   searchMenu,
-  getIdMenu,
+  getIdKeyboard,
   contactKeyboard,
-  requestChannelKeyboard,
-  requestGroupKeyboard,
-  requestUsersKeyboard,
   removeKeyboard,
   adminMenu,
   adminChannelsMenu,

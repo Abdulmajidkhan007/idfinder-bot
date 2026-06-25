@@ -6,17 +6,19 @@ const { checkSubscription } = require('../utils/subscription');
 
 const WELCOME =
   '👋 <b>ID Topuvchi Bot</b>ga xush kelibsiz!\n\n' +
-  'Bu bot orqali siz:\n' +
-  '• 🔍 Foydalanuvchini ID, username yoki kontakt orqali qidirishingiz\n' +
-  '• 🆔 Kanal, guruh va foydalanuvchilarning ID sini olishingiz\n' +
-  '• 👤 O\'zingizning ID\'ingizni bilishingiz mumkin.\n\n' +
-  'Boshlash uchun quyidagi menyudan tanlang 👇';
+  'Bu bot orqali foydalanuvchi, kanal va guruhlarning Telegram ID larini topa olasiz.\n\n' +
+  '<b>Mavjud komandalar:</b>\n' +
+  '/search — 🔍 Foydalanuvchini qidirish\n' +
+  '/getid — 🆔 Kanal / Guruh / User ID olish\n' +
+  '/myid — 👤 Mening ID\'im\n' +
+  '/help — ❓ Yordam\n\n' +
+  'Pastdagi <b>Menu</b> tugmasini bosing yoki komanda yozing 👇';
 
-// Asosiy menyuni yuboradi.
-function sendMainMenu(bot, chatId, userId, text) {
-  return bot.sendMessage(chatId, text || WELCOME, {
+// Xush kelibsiz xabarini yuboradi (inline klaviaturasiz).
+function sendWelcome(bot, chatId) {
+  return bot.sendMessage(chatId, WELCOME, {
     parse_mode: 'HTML',
-    ...keyboards.mainMenu(userId),
+    ...keyboards.removeKeyboard(),
   });
 }
 
@@ -51,7 +53,7 @@ async function handleStart(bot, msg) {
   const subscribed = await ensureSubscribed(bot, chatId, user.id);
   if (!subscribed) return;
 
-  await sendMainMenu(bot, chatId, user.id);
+  await sendWelcome(bot, chatId);
 }
 
 // "✅ Obunani tekshirish" tugmasi (callback: sub:check).
@@ -65,7 +67,6 @@ async function handleSubCheck(bot, query) {
       text: '❌ Hali barcha kanallarga a\'zo bo\'lmadingiz.',
       show_alert: true,
     });
-    // Yangilangan ro'yxatni ko'rsatamiz.
     try {
       await bot.editMessageReplyMarkup(keyboards.subscriptionKeyboard(missing).reply_markup, {
         chat_id: chatId,
@@ -83,12 +84,12 @@ async function handleSubCheck(bot, query) {
   } catch (_) {
     /* o'chirib bo'lmasa muhim emas */
   }
-  await sendMainMenu(bot, chatId, userId);
+  await sendWelcome(bot, chatId);
 }
 
 module.exports = {
   WELCOME,
-  sendMainMenu,
+  sendWelcome,
   ensureSubscribed,
   handleStart,
   handleSubCheck,

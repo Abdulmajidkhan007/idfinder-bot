@@ -4,64 +4,31 @@ const storage = require('../utils/storage');
 const keyboards = require('../utils/keyboards');
 const { formatChat, formatUserId } = require('../utils/format');
 
-// ID olish menyusi (callback: getid:menu).
-async function showGetIdMenu(bot, query) {
-  await bot.answerCallbackQuery(query.id);
-  await bot.editMessageText(
+// /getid — bitta reply keyboard (kanal + guruh + foydalanuvchi).
+async function handleGetIdCommand(bot, chatId) {
+  await bot.sendMessage(
+    chatId,
     '🆔 <b>ID olish</b>\n\n' +
-      'Quyidagidan tanlang yoki kanal/guruhdan istalgan xabarni shu yerga ' +
-      '<b>forward</b> qiling — bot ID ni qaytaradi.',
-    {
-      chat_id: query.message.chat.id,
-      message_id: query.message.message_id,
-      parse_mode: 'HTML',
-      ...keyboards.getIdMenu(),
-    }
+      'Quyidagi tugmalardan birini bosing:\n' +
+      '• <b>📢 Kanal</b> — kanal tanlash oynasi ochiladi\n' +
+      '• <b>👥 Guruh</b> — guruh tanlash oynasi ochiladi\n' +
+      '• <b>👤 Foydalanuvchi</b> — foydalanuvchi tanlash oynasi ochiladi\n\n' +
+      'Yoki kanal / guruhdan istalgan xabarni <b>forward</b> qiling — bot ID ni avtomatik qaytaradi.',
+    { parse_mode: 'HTML', ...keyboards.getIdKeyboard() }
   );
 }
 
-// getid:channel
-async function promptChannel(bot, query) {
-  await bot.answerCallbackQuery(query.id);
-  await bot.sendMessage(
-    query.message.chat.id,
-    '📢 Quyidagi tugma orqali <b>kanal</b>ni tanlang:',
-    { parse_mode: 'HTML', ...keyboards.requestChannelKeyboard() }
-  );
-}
-
-// getid:group
-async function promptGroup(bot, query) {
-  await bot.answerCallbackQuery(query.id);
-  await bot.sendMessage(
-    query.message.chat.id,
-    '👥 Quyidagi tugma orqali <b>guruh</b>ni tanlang:',
-    { parse_mode: 'HTML', ...keyboards.requestGroupKeyboard() }
-  );
-}
-
-// getid:user
-async function promptUser(bot, query) {
-  await bot.answerCallbackQuery(query.id);
-  await bot.sendMessage(
-    query.message.chat.id,
-    '👤 Quyidagi tugma orqali <b>foydalanuvchi</b>ni tanlang:',
-    { parse_mode: 'HTML', ...keyboards.requestUsersKeyboard() }
-  );
-}
-
-// msg.chat_shared — request_chat javobi (kanal yoki guruh).
+// msg.chat_shared — request_chat javobi.
+// request_id 1 = kanal, 2 = guruh.
 async function handleChatShared(bot, msg) {
   const chatId = msg.chat.id;
-  const shared = msg.chat_shared; // { request_id, chat_id, title?, username? }
+  const shared = msg.chat_shared;
   const isChannel = shared.request_id === 1;
   storage.incStat('getId', isChannel ? 'channel' : 'group');
 
-  // request_chat ba'zan faqat chat_id qaytaradi; qo'shimcha ma'lumotni
-  // getChat orqali olishga harakat qilamiz.
   let info = {
     id: shared.chat_id,
-    type: isChannel ? 'channel' : 'group',
+    type: isChannel ? 'channel' : 'supergroup',
     title: shared.title,
     username: shared.username,
   };
@@ -69,7 +36,7 @@ async function handleChatShared(bot, msg) {
     const full = await bot.getChat(shared.chat_id);
     info = full;
   } catch (_) {
-    /* bot a'zo bo'lmasa getChat ishlamaydi — mavjud ma'lumot bilan davom etamiz */
+    /* bot a'zo bo'lmasa getChat ishlamaydi — mavjud ma'lumot bilan davom */
   }
 
   await bot.sendMessage(chatId, formatChat(info), {
@@ -82,8 +49,9 @@ async function handleChatShared(bot, msg) {
 async function handleUsersShared(bot, msg) {
   const chatId = msg.chat.id;
   storage.incStat('getId', 'user');
-  // Bot API versiyasiga qarab users (yangi) yoki user_ids (eski) bo'lishi mumkin.
+
   const shared = msg.users_shared;
+  // Bot API yangi: users[]; eski: user_ids[].
   const list = shared.users || (shared.user_ids || []).map((id) => ({ user_id: id }));
 
   if (!list.length) {
@@ -104,16 +72,13 @@ async function handleUsersShared(bot, msg) {
   });
 }
 
-// Forward qilingan xabar — msg.forward_from_chat (kanal/guruh) yoki
-// msg.forward_from (foydalanuvchi).
+// Forward qilingan xabar — msg.forward_from_chat yoki msg.forward_from.
 async function handleForward(bot, msg) {
   const chatId = msg.chat.id;
 
   if (msg.forward_from_chat) {
     storage.incStat('getId', 'forward');
-    await bot.sendMessage(chatId, formatChat(msg.forward_from_chat), {
-      parse_mode: 'HTML',
-    });
+    await bot.sendMessage(chatId, formatChat(msg.forward_from_chat), { parse_mode: 'HTML' });
     return true;
   }
 
@@ -132,12 +97,11 @@ async function handleForward(bot, msg) {
     return true;
   }
 
-  // Maxfiylik sababli forward manbai yashirilgan bo'lishi mumkin.
   if (msg.forward_date || msg.forward_sender_name) {
     await bot.sendMessage(
       chatId,
-      'ℹ️ Bu xabar forward qilingan, lekin manba maxfiylik sozlamalari ' +
-        'sababli yashirilgan — ID ni olishning iloji yo\'q.'
+      'ℹ️ Bu xabar forward qilingan, lekin manba maxfiylik sozlamalari sababli ' +
+        'yashirilgan — ID ni olishning iloji yo\'q.'
     );
     return true;
   }
@@ -146,10 +110,7 @@ async function handleForward(bot, msg) {
 }
 
 module.exports = {
-  showGetIdMenu,
-  promptChannel,
-  promptGroup,
-  promptUser,
+  handleGetIdCommand,
   handleChatShared,
   handleUsersShared,
   handleForward,
