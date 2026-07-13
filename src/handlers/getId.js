@@ -18,6 +18,24 @@ async function handleGetIdCommand(bot, chatId) {
   );
 }
 
+// Chat'ni getChat + getChatMemberCount bilan boyitadi.
+// Qaytaradi: { info, extra }.
+async function enrichChat(bot, fallbackInfo, chatIdForCount) {
+  let info = fallbackInfo;
+  const extra = {};
+  try {
+    info = await bot.getChat(chatIdForCount);
+  } catch (_) {
+    /* bot a'zo bo'lmasa getChat ishlamaydi — fallback bilan davom */
+  }
+  try {
+    extra.member_count = await bot.getChatMemberCount(chatIdForCount);
+  } catch (_) {
+    /* a'zolar sonini olib bo'lmasa — ko'rsatmaymiz */
+  }
+  return { info, extra };
+}
+
 // msg.chat_shared — request_chat javobi.
 // request_id 1 = kanal, 2 = guruh.
 async function handleChatShared(bot, msg) {
@@ -26,20 +44,15 @@ async function handleChatShared(bot, msg) {
   const isChannel = shared.request_id === 1;
   storage.incStat('getId', isChannel ? 'channel' : 'group');
 
-  let info = {
+  const fallback = {
     id: shared.chat_id,
     type: isChannel ? 'channel' : 'supergroup',
     title: shared.title,
     username: shared.username,
   };
-  try {
-    const full = await bot.getChat(shared.chat_id);
-    info = full;
-  } catch (_) {
-    /* bot a'zo bo'lmasa getChat ishlamaydi — mavjud ma'lumot bilan davom */
-  }
+  const { info, extra } = await enrichChat(bot, fallback, shared.chat_id);
 
-  await bot.sendMessage(chatId, formatChat(info), {
+  await bot.sendMessage(chatId, formatChat(info, extra), {
     parse_mode: 'HTML',
     ...keyboards.removeKeyboard(),
   });
@@ -78,7 +91,12 @@ async function handleForward(bot, msg) {
 
   if (msg.forward_from_chat) {
     storage.incStat('getId', 'forward');
-    await bot.sendMessage(chatId, formatChat(msg.forward_from_chat), { parse_mode: 'HTML' });
+    const { info, extra } = await enrichChat(
+      bot,
+      msg.forward_from_chat,
+      msg.forward_from_chat.id
+    );
+    await bot.sendMessage(chatId, formatChat(info, extra), { parse_mode: 'HTML' });
     return true;
   }
 

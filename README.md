@@ -15,8 +15,12 @@ Node.js (CommonJS) + [`node-telegram-bot-api`](https://github.com/yagop/node-tel
   - 👥 Group tanlash → `request_chat` (`chat_is_channel: false`)
   - 👤 Foydalanuvchi tanlash → `request_users`
   - ↪️ Forward qilingan xabardan → `forward_from_chat` / `forward_from`
+  - Kanal/guruh natijalari **boyitilgan**: tur, a'zolar soni (`getChatMemberCount`), tavsif, havola.
 - 👤 **Mening ID'im**
+- ⚡ **Inline mode** — istalgan chatda `@bot_username @durov` yozib ID olish (public/ko'rilgan entity).
 - 🛠 **Admin panel** — statistika, majburiy kanallar boshqaruvi, broadcast, foydalanuvchilar ro'yxati.
+
+> ⚡ Inline mode ishlashi uchun @BotFather'da `/setinline` ni yoqing (bir marta).
 
 ## ⚠️ Bot API cheklovi (telefon orqali qidiruv)
 

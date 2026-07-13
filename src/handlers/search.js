@@ -101,7 +101,16 @@ function explainLookupError(err, queryValue) {
 async function lookup(bot, chatId, queryValue) {
   try {
     const chat = await bot.getChat(queryValue);
-    await bot.sendMessage(chatId, formatChat(chat), {
+    const extra = {};
+    // Kanal/guruh bo'lsa a'zolar sonini ham qo'shamiz.
+    if (chat.type && chat.type !== 'private') {
+      try {
+        extra.member_count = await bot.getChatMemberCount(chat.id);
+      } catch (_) {
+        /* ololmasak — ko'rsatmaymiz */
+      }
+    }
+    await bot.sendMessage(chatId, formatChat(chat, extra), {
       parse_mode: 'HTML',
       ...keyboards.removeKeyboard(),
     });

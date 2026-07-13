@@ -7,8 +7,16 @@ function line(label, value) {
   return `${label}: ${value}`;
 }
 
+const TYPE_LABEL = {
+  private: 'Foydalanuvchi',
+  group: 'Guruh',
+  supergroup: 'Superguruh',
+  channel: 'Kanal',
+};
+
 // getChat natijasini chiroyli matnga aylantiradi (user yoki chat).
-function formatChat(chat) {
+// Ixtiyoriy extra: { member_count } — boyitilgan ma'lumot.
+function formatChat(chat, extra = {}) {
   const typeEmoji = {
     private: '👤',
     group: '👥',
@@ -19,13 +27,16 @@ function formatChat(chat) {
 
   const details = [
     line('🆔 ID', `<code>${chat.id}</code>`),
-    line('📂 Type', chat.type),
+    line('📂 Tur', TYPE_LABEL[chat.type] || chat.type),
     line('👤 Ism', chat.first_name),
     line('👥 Familiya', chat.last_name),
     line('🏷 Nomi', chat.title),
     line('📛 Username', chat.username ? `@${chat.username}` : null),
+    line('👥 A\'zolar', extra.member_count != null ? extra.member_count : null),
     line('📝 Bio', chat.bio),
     line('📝 Tavsif', chat.description),
+    line('🔗 Havola', chat.invite_link),
+    line('💬 Bog\'langan chat', chat.linked_chat_id ? `<code>${chat.linked_chat_id}</code>` : null),
   ].filter(Boolean);
 
   return [`${emoji} <b>Topildi</b>`, '', ...details].join('\n');

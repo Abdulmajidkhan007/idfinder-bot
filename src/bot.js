@@ -11,6 +11,7 @@ const start = require('./handlers/start');
 const search = require('./handlers/search');
 const getId = require('./handlers/getId');
 const admin = require('./handlers/admin');
+const inline = require('./handlers/inline');
 
 const HELP_TEXT =
   '❓ <b>Yordam</b>\n\n' +
@@ -21,6 +22,7 @@ const HELP_TEXT =
   '/start — Botni qayta ishga tushirish\n\n' +
   '<b>Qo\'shimcha:</b>\n' +
   '• Kanal yoki guruhdan xabar <b>forward</b> qilib yuboring — bot ID ni avtomatik qaytaradi.\n' +
+  '• <b>Inline</b>: istalgan chatda <code>@bot_username @durov</code> deb yozing — ID chiqadi.\n' +
   '• /cancel — joriy amalni bekor qilish';
 
 // Runtime data tayyorlash (seed ko'chirish).
@@ -223,6 +225,15 @@ bot.on('message', async (msg) => {
     try {
       await bot.sendMessage(chatId, "⚠️ Xatolik yuz berdi. Qaytadan urinib ko'ring.");
     } catch (_) { /* ignore */ }
+  }
+});
+
+// =================== INLINE QUERY ===================
+bot.on('inline_query', async (iq) => {
+  try {
+    await inline.handleInlineQuery(bot, iq);
+  } catch (err) {
+    console.error('❌ inline_query xatosi:', err.message);
   }
 });
 
