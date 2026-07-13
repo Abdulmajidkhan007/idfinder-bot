@@ -60,6 +60,43 @@ async function promptByPhone(bot, query) {
   );
 }
 
+// getChat xatosini turkumlab, foydalanuvchiga tushunarli xabar qaytaradi.
+function explainLookupError(err, queryValue) {
+  const desc =
+    (err.response && err.response.body && err.response.body.description) ||
+    err.message ||
+    '';
+  const d = desc.toLowerCase();
+
+  // Eng ko'p uchraydigan holat: bot bu entity'ni hali "ko'rmagan".
+  if (d.includes('chat not found')) {
+    const isUsername = typeof queryValue === 'string' && queryValue.startsWith('@');
+    return (
+      '❌ <b>Topilmadi.</b>\n\n' +
+      (isUsername
+        ? 'Bu <b>username</b> mavjud emas, yoki egasi uni yaqinda o\'zgartirgan, ' +
+          'yoki bu <b>maxfiy (private)</b> akkaunt/kanal.\n\n'
+        : 'Bu <b>raqamli ID</b> bo\'yicha bot ma\'lumot ololmadi.\n\n') +
+      'ℹ️ <b>Nega?</b> Telegram Bot API maxfiylik uchun faqat bot <b>oldin ko\'rgan</b> ' +
+      '(sizga yozgan, umumiy guruhda bo\'lgan) yoki <b>ochiq (public)</b> ' +
+      'foydalanuvchi/kanallarni topa oladi. Ixtiyoriy shaxsni ID yoki username ' +
+      'orqali qidirish Bot API\'da <b>ataylab cheklangan</b>.\n\n' +
+      '✅ <b>Ishonchli yo\'l:</b> /getid — kanal, guruh yoki foydalanuvchini ' +
+      'tugma orqali tanlang, yoki undan xabar <b>forward</b> qiling.'
+    );
+  }
+
+  if (d.includes('user_id_invalid') || d.includes('invalid')) {
+    return '❌ ID yoki username formati noto\'g\'ri ko\'rinadi. Tekshirib qayta yuboring.';
+  }
+
+  if (d.includes('too many requests') || d.includes('retry')) {
+    return '⏳ Hozir so\'rovlar ko\'p. Bir oz kuting va qayta urinib ko\'ring.';
+  }
+
+  return '❌ Topilmadi.\n\n<i>Sabab:</i> ' + (desc || 'noma\'lum xato');
+}
+
 // getChat orqali lookup (ID yoki @username).
 async function lookup(bot, chatId, queryValue) {
   try {
@@ -69,16 +106,10 @@ async function lookup(bot, chatId, queryValue) {
       ...keyboards.removeKeyboard(),
     });
   } catch (err) {
-    await bot.sendMessage(
-      chatId,
-      '❌ Topilmadi. Bu foydalanuvchi/kanal <b>ochiq (public)</b> emas yoki ' +
-        'bot uni hali "ko\'rmagan" bo\'lishi mumkin.\n\n' +
-        '<i>Sabab:</i> ' +
-        (err.response && err.response.body && err.response.body.description
-          ? err.response.body.description
-          : err.message),
-      { parse_mode: 'HTML' }
-    );
+    await bot.sendMessage(chatId, explainLookupError(err, queryValue), {
+      parse_mode: 'HTML',
+      ...keyboards.removeKeyboard(),
+    });
   }
 }
 
