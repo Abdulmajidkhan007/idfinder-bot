@@ -33,6 +33,13 @@ function formatChat(chat, extra = {}) {
     line('🏷 Nomi', chat.title),
     line('📛 Username', chat.username ? `@${chat.username}` : null),
     line('👥 A\'zolar', extra.member_count != null ? extra.member_count : null),
+    line('👮 Adminlar', extra.admin_count != null ? extra.admin_count : null),
+    line(
+      '👑 Egasi',
+      extra.creator
+        ? `${extra.creator}${extra.creator_id ? ` (<code>${extra.creator_id}</code>)` : ''}`
+        : null
+    ),
     line('📝 Bio', chat.bio),
     line('📝 Tavsif', chat.description),
     line('🔗 Havola', chat.invite_link),

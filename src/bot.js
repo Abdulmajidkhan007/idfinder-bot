@@ -68,9 +68,10 @@ async function gate(chatId, userId) {
   return start.ensureSubscribed(bot, chatId, userId);
 }
 
-// Komandadan botUsername qismini ajratadi: /start@botname → /start
+// Birinchi so'zni komanda sifatida ajratadi va @botname / parametrni tashlaydi:
+// "/start@botname from_inline" → "/start"
 function parseCmd(text) {
-  return (text || '').split('@')[0].toLowerCase();
+  return (text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
 }
 
 // =================== CALLBACK QUERY ROUTING ===================

@@ -18,7 +18,15 @@ async function handleGetIdCommand(bot, chatId) {
   );
 }
 
-// Chat'ni getChat + getChatMemberCount bilan boyitadi.
+// Bir ChatMember'dan ko'rsatiladigan nomni yasaydi.
+function memberName(m) {
+  const u = m.user || {};
+  if (u.username) return `@${u.username}`;
+  return [u.first_name, u.last_name].filter(Boolean).join(' ') || String(u.id);
+}
+
+// Chat'ni getChat + getChatMemberCount + getChatAdministrators bilan boyitadi.
+// Admin ma'lumotlari faqat bot chatga a'zo bo'lsa keladi (aks hola jimgina o'tkazib yuboriladi).
 // Qaytaradi: { info, extra }.
 async function enrichChat(bot, fallbackInfo, chatIdForCount) {
   let info = fallbackInfo;
@@ -32,6 +40,17 @@ async function enrichChat(bot, fallbackInfo, chatIdForCount) {
     extra.member_count = await bot.getChatMemberCount(chatIdForCount);
   } catch (_) {
     /* a'zolar sonini olib bo'lmasa — ko'rsatmaymiz */
+  }
+  try {
+    const admins = await bot.getChatAdministrators(chatIdForCount);
+    extra.admin_count = admins.length;
+    const creator = admins.find((a) => a.status === 'creator');
+    if (creator) {
+      extra.creator = memberName(creator);
+      extra.creator_id = creator.user && creator.user.id;
+    }
+  } catch (_) {
+    /* bot a'zo/admin bo'lmasa adminlarni olib bo'lmaydi — ko'rsatmaymiz */
   }
   return { info, extra };
 }
