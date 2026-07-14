@@ -9,5 +9,10 @@
     "group": 0,
     "user": 0,
     "forward": 0
+  },
+  "inline": {
+    "self": 0,
+    "by_id": 0,
+    "by_username": 0
   }
 }

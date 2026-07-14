@@ -2,6 +2,7 @@
 
 const storage = require('../utils/storage');
 const keyboards = require('../utils/keyboards');
+const botInfo = require('../utils/botInfo');
 const { formatChat, formatUserId } = require('../utils/format');
 
 // /getid — bitta reply keyboard (kanal + guruh + foydalanuvchi).
@@ -38,12 +39,14 @@ async function enrichChat(bot, fallbackInfo, chatIdForCount) {
   }
   try {
     extra.member_count = await bot.getChatMemberCount(chatIdForCount);
+    extra.bot_in_chat = true;
   } catch (_) {
     /* a'zolar sonini olib bo'lmasa — ko'rsatmaymiz */
   }
   try {
     const admins = await bot.getChatAdministrators(chatIdForCount);
     extra.admin_count = admins.length;
+    extra.bot_in_chat = true;
     const creator = admins.find((a) => a.status === 'creator');
     if (creator) {
       extra.creator = memberName(creator);
@@ -53,6 +56,25 @@ async function enrichChat(bot, fallbackInfo, chatIdForCount) {
     /* bot a'zo/admin bo'lmasa adminlarni olib bo'lmaydi — ko'rsatmaymiz */
   }
   return { info, extra };
+}
+
+// Chat natijasi uchun matn + tegishli reply_markup ni tayyorlaydi.
+// Bot a'zo bo'lmagan guruh/kanal bo'lsa — "Botni qo'shish" tugmasi qo'shiladi.
+function buildChatResult(info, extra) {
+  let text = formatChat(info, extra);
+  const type = info.type;
+  const isGroupOrChannel = ['group', 'supergroup', 'channel'].includes(type);
+  const uname = botInfo.username();
+
+  if (!extra.bot_in_chat && isGroupOrChannel && uname) {
+    text +=
+      '\n\nℹ️ To\'liq ma\'lumot (a\'zolar soni, adminlar, egasi) uchun ' +
+      'botni shu ' +
+      (type === 'channel' ? 'kanalga admin qiling' : 'guruhga qo\'shing') +
+      ':';
+    return { text, options: { parse_mode: 'HTML', ...keyboards.addToChatKeyboard(uname, type) } };
+  }
+  return { text, options: { parse_mode: 'HTML', ...keyboards.removeKeyboard() } };
 }
 
 // msg.chat_shared — request_chat javobi.
@@ -71,10 +93,8 @@ async function handleChatShared(bot, msg) {
   };
   const { info, extra } = await enrichChat(bot, fallback, shared.chat_id);
 
-  await bot.sendMessage(chatId, formatChat(info, extra), {
-    parse_mode: 'HTML',
-    ...keyboards.removeKeyboard(),
-  });
+  const { text, options } = buildChatResult(info, extra);
+  await bot.sendMessage(chatId, text, options);
 }
 
 // msg.users_shared — request_users javobi.
@@ -115,7 +135,8 @@ async function handleForward(bot, msg) {
       msg.forward_from_chat,
       msg.forward_from_chat.id
     );
-    await bot.sendMessage(chatId, formatChat(info, extra), { parse_mode: 'HTML' });
+    const { text, options } = buildChatResult(info, extra);
+    await bot.sendMessage(chatId, text, options);
     return true;
   }
 

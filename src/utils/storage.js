@@ -14,6 +14,7 @@ const FILES = {
     fallback: {
       searches: { by_id: 0, by_username: 0, by_phone: 0 },
       getId: { channel: 0, group: 0, user: 0, forward: 0 },
+      inline: { self: 0, by_id: 0, by_username: 0 },
     },
   },
 };

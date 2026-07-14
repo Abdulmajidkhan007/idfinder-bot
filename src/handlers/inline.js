@@ -66,6 +66,7 @@ async function handleInlineQuery(bot, iq) {
 
   // Bo'sh so'rov — o'z ID.
   if (!q) {
+    storage.incStat('inline', 'self');
     return answer(bot, iq, [selfResult(iq.from)]);
   }
 
@@ -91,7 +92,7 @@ async function handleInlineQuery(bot, iq) {
 
   try {
     const chat = await bot.getChat(target);
-    storage.incStat('searches', typeof target === 'number' ? 'by_id' : 'by_username');
+    storage.incStat('inline', typeof target === 'number' ? 'by_id' : 'by_username');
     const text = formatChat(chat);
     const title =
       (chat.title || chat.first_name || String(chat.id)) +

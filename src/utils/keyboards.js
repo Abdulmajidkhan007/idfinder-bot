@@ -73,6 +73,21 @@ function removeKeyboard() {
   return { reply_markup: { remove_keyboard: true } };
 }
 
+// ---- "Botni qo'shish" inline tugmasi (bot chatga a'zo bo'lmaganda) ----
+// type: 'channel' → kanalga admin; aks holda guruhga qo'shish.
+function addToChatKeyboard(username, type) {
+  const isChannel = type === 'channel';
+  const param = isChannel ? 'startchannel' : 'startgroup';
+  const label = isChannel ? '➕ Botni kanalga admin qiling' : '➕ Botni guruhga qo\'shish';
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: label, url: `https://t.me/${username}?${param}=true` }],
+      ],
+    },
+  };
+}
+
 // ---- Admin panel ----
 function adminMenu() {
   return {
@@ -106,6 +121,7 @@ module.exports = {
   getIdKeyboard,
   contactKeyboard,
   removeKeyboard,
+  addToChatKeyboard,
   adminMenu,
   adminChannelsMenu,
 };

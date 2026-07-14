@@ -6,6 +6,7 @@ const { BOT_TOKEN, ADMIN_IDS, isAdmin } = require('./config');
 const storage = require('./utils/storage');
 const keyboards = require('./utils/keyboards');
 const state = require('./utils/state');
+const botInfo = require('./utils/botInfo');
 
 const start = require('./handlers/start');
 const search = require('./handlers/search');
@@ -59,8 +60,20 @@ async function registerCommands() {
   }
 }
 
+// Bot username'ini olib saqlaymiz (add-to-group tugmasi, inline uchun).
+async function loadBotInfo() {
+  try {
+    const me = await bot.getMe();
+    botInfo.set(me);
+    console.log(`🤖 @${me.username} ishga tushdi (polling).`);
+  } catch (err) {
+    console.error('⚠️  getMe xatosi:', err.message);
+    console.log('🤖 ID Topuvchi Bot ishga tushdi (polling).');
+  }
+}
+
 registerCommands();
-console.log('🤖 ID Topuvchi Bot ishga tushdi (polling).');
+loadBotInfo();
 
 // ---- Obuna gate (admin bypass) ----
 async function gate(chatId, userId) {

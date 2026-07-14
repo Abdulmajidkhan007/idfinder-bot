@@ -30,8 +30,10 @@ async function showStats(bot, query) {
   const stats = storage.getStats();
   const s = stats.searches || {};
   const g = stats.getId || {};
+  const i = stats.inline || {};
   const totalSearch = (s.by_id || 0) + (s.by_username || 0) + (s.by_phone || 0);
   const totalGetId = (g.channel || 0) + (g.group || 0) + (g.user || 0) + (g.forward || 0);
+  const totalInline = (i.self || 0) + (i.by_id || 0) + (i.by_username || 0);
 
   const text =
     '📊 <b>Statistika</b>\n\n' +
@@ -44,7 +46,11 @@ async function showStats(bot, query) {
     `  • 📢 Kanal: ${g.channel || 0}\n` +
     `  • 👥 Group: ${g.group || 0}\n` +
     `  • 👤 User: ${g.user || 0}\n` +
-    `  • ↪️ Forward: ${g.forward || 0}`;
+    `  • ↪️ Forward: ${g.forward || 0}\n\n` +
+    `⚡ <b>Inline qidiruvlar</b> (jami: ${totalInline})\n` +
+    `  • 👤 O'z ID (bo'sh so'rov): ${i.self || 0}\n` +
+    `  • 🔢 ID orqali: ${i.by_id || 0}\n` +
+    `  • 📛 Username orqali: ${i.by_username || 0}`;
 
   await bot.editMessageText(text, {
     chat_id: query.message.chat.id,
